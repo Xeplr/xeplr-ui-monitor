@@ -1,0 +1,39 @@
+{
+  "name": "@xeplr/ui-monitor",
+  "version": "0.1.0",
+  "description": "The page for @xeplr/monitor: sign in, see a server's services, start / stop / restart / kill them, read their logs live. Model, controllers, designs",
+  "type": "module",
+  "main": "src/index.js",
+  "files": [
+    "src/"
+  ],
+  "keywords": [
+    "monitor",
+    "systemd",
+    "logs",
+    "react",
+    "hooks"
+  ],
+  "author": "xeplr",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Xeplr/xeplr-ui-monitor"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "peerDependencies": {
+    "react": "^18.0.0 || ^19.0.0"
+  },
+  "scripts": {
+    "test": "node --test test/*.test.js",
+    "dev": "vite dev"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^5.2.0",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "vite": "^7.3.7"
+  }
+}

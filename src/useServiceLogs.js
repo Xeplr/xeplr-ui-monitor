@@ -1,0 +1,105 @@
+// ONE SERVICE'S LOG — the controller: live (followed as it is written) or
+// history (a time range), a search and a level that narrow what shows, pause
+// that holds the screen still while lines keep arriving underneath. No JSX.
+// The mode and the filter are in the URL (?tab=history&grep=…&level=warn).
+//
+//   api        createMonitorApi()
+//   unit       the service, or null
+//   onExpired  a request answered 401
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { readUrl, writeUrl } from './monitorUrl.js'
+import { keeps, appended } from './monitorFormat.js'
+
+const KEEP = 5000          // lines held on screen; the oldest go
+const FIRST = 300          // lines shown when a log is opened
+
+export function useServiceLogs({ api, unit, onExpired }) {
+  const [url, setUrl] = useState(readUrl)
+  const [lines, setLines] = useState([])
+  const [state, setState] = useState('idle')        // idle | loading | live | reconnecting | ready | error
+  const [error, setError] = useState(null)
+  const [paused, setPaused] = useState(false)
+  const [held, setHeld] = useState([])              // arrived while paused
+  const [range, setRange] = useState({ since: '', until: '', lines: '1000' })
+  const pausedRef = useRef(false)
+
+  useEffect(() => {
+    const on = () => setUrl(readUrl())
+    window.addEventListener('popstate', on)
+    window.addEventListener('xeplr-monitor-url', on)
+    return () => { window.removeEventListener('popstate', on); window.removeEventListener('xeplr-monitor-url', on) }
+  }, [])
+
+  const mode = url.tab === 'history' ? 'history' : 'live'
+  const grep = url.grep || ''
+  const level = url.level || ''
+
+  const failed = useCallback((err) => {
+    if (err && err.status === 401 && onExpired) onExpired()
+    setError(err.message)
+    setState('error')
+  }, [onExpired])
+
+  // Live: the last lines, then every new one as it is written. Closing the
+  // page, choosing another service or switching to history ends the follow,
+  // and with it the journalctl reading it on the server.
+  useEffect(() => {
+    setLines([]); setHeld([]); setError(null); setPaused(false); pausedRef.current = false
+    if (!unit || mode !== 'live') { setState('idle'); return undefined }
+    let stop = null
+    let live = true
+    setState('loading')
+    api.logs(unit, { lines: FIRST }).then((first) => {
+      if (!live) return
+      setLines(first)
+      stop = api.follow(unit, (line) => {
+        if (pausedRef.current) setHeld((h) => appended(h, [line], KEEP))
+        else setLines((l) => appended(l, [line], KEEP))
+      }, (problem) => {
+        if (!live) return
+        if (problem) { setError(problem); setState('error') } else setState('reconnecting')
+      }, () => { if (live) { setState('live'); setError(null) } })
+    }).catch((e) => { if (live) failed(e) })
+    return () => { live = false; if (stop) stop() }
+  }, [api, unit, mode, failed])
+
+  // History: read when asked (and when opened).
+  const readHistory = useCallback(async () => {
+    if (!unit) return
+    setState('loading')
+    setError(null)
+    try {
+      const out = await api.logs(unit, {
+        lines: range.lines || 1000,
+        since: range.since ? new Date(range.since).toISOString() : undefined,
+        until: range.until ? new Date(range.until).toISOString() : undefined,
+        grep: grep || undefined,
+        level: level || undefined
+      })
+      setLines(out)
+      setState('ready')
+    } catch (e) { failed(e) }
+  }, [api, unit, range, grep, level, failed])
+  useEffect(() => { if (unit && mode === 'history') readHistory() }, [unit, mode]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  const pause = useCallback(() => { pausedRef.current = true; setPaused(true) }, [])
+  const resume = useCallback(() => {
+    pausedRef.current = false
+    setPaused(false)
+    setHeld((h) => { if (h.length) setLines((l) => appended(l, h, KEEP)); return [] })
+  }, [])
+  const clear = useCallback(() => { setLines([]); setHeld([]) }, [])
+
+  const shown = useMemo(() => lines.filter((l) => keeps(l, grep, level)), [lines, grep, level])
+
+  return {
+    unit, mode,
+    setMode: useCallback((m) => writeUrl({ tab: m === 'history' ? 'history' : null }, true), []),
+    grep, setGrep: useCallback((g) => writeUrl({ grep: g }), []),
+    level, setLevel: useCallback((v) => writeUrl({ level: v }), []),
+    range, setRange: useCallback((patch) => setRange((r) => Object.assign({}, r, patch)), []),
+    readHistory,
+    lines: shown, total: lines.length, state, error,
+    paused, held: held.length, pause, resume, clear
+  }
+}
