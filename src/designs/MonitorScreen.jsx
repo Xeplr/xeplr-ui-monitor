@@ -1,7 +1,7 @@
 // THE MONITOR — presentation only. Everything arrives as props:
 //   c        useMonitorServices: the list, the selected one, actions, add/edit, audit
 //   logs     useServiceLogs: the selected service's log
-//   settings useMonitorSettings: what may be added (allowed)
+//   settings useMonitorSettings: the monitor's own unit
 //
 // Left, the watched services with their state; right, the selected one: what
 // systemd says about it (memory, CPU, threads, what needs a look, what runs
@@ -74,7 +74,6 @@ function ServiceList({ c, settings }) {
           )
         })}
       </ul>
-      {settings.allowed.length ? <p className="xeplr-monitor-muted xeplr-monitor-small">This monitor may control: {settings.allowed.join(', ')}</p> : null}
     </aside>
   )
 }
@@ -296,7 +295,7 @@ function AddWindow({ c, settings }) {
       <form onSubmit={c.saveAdd}>
         <div id="xeplr-monitor-add-unit"><TextFieldPage label="Its systemd name" value={a.unit} placeholder="e.g. xeplr-bi-api" maxLength={200} onChange={(v) => c.editAdd({ unit: v })} /></div>
         <div id="xeplr-monitor-add-label"><TextFieldPage label="A name for it here (optional)" value={a.label} placeholder="e.g. BI API (testbi)" maxLength={80} onChange={(v) => c.editAdd({ label: v })} /></div>
-        <p className="xeplr-monitor-muted xeplr-monitor-small">It must be a service on this server{settings.allowed.length ? ', matching ' + settings.allowed.join(', ') : ''}. Adding it starts nothing.</p>
+        <p className="xeplr-monitor-muted xeplr-monitor-small">Any systemd service on this server. Adding it starts nothing.</p>
         {a.error ? <p className="xeplr-monitor-bad" role="alert">{a.error}</p> : null}
         <div className="xeplr-monitor-row">
           <span />

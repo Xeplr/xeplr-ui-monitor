@@ -81,3 +81,24 @@ test('a picked time span as the times the log is read between', async () => {
   assert.deepEqual(spanTimes({ from: '2026-11-12T09:30', to: '2026-11-12T10:00' }), { since: local('2026-11-12T09:30'), until: local('2026-11-12T10:00:59.999') }, 'to the end of the last minute')
   assert.deepEqual(spanTimes({ from: '2026-11-12T09:30' }), { since: local('2026-11-12T09:30'), until: undefined }, 'open-ended')
 })
+
+test('the server itself: GB, shares, uptime, how memory divides, what needs a look', async () => {
+  const { gb, share, uptimeText, memoryParts, diskState, serverConcerns } = await import('../src/serverFormat.js')
+  const G = 1024 * 1024 * 1024
+  assert.equal(gb(7.66 * G), '7.66 GB')
+  assert.equal(gb(null), '—')
+  assert.equal(share(1, 4), 25)
+  assert.equal(share(1, 0), null)
+  assert.equal(uptimeText(3 * 86400 + 4 * 3600 + 59), '3 days 4 h')
+  assert.equal(uptimeText(5 * 3600 + 12 * 60), '5 h 12 min')
+  assert.equal(uptimeText(480), '8 min')
+  const m = { totalBytes: 8 * G, usedBytes: 3 * G, cacheBytes: 2.5 * G, buffersBytes: 0.5 * G, freeBytes: 2 * G, availableBytes: 4.5 * G, swapTotalBytes: 0, swapUsedBytes: 0 }
+  const parts = memoryParts(m)
+  assert.deepEqual(parts.map((p) => [p.key, p.percent]), [['used', 38], ['cache', 38], ['free', 24]])
+  assert.equal(parts.reduce((a, p) => a + p.percent, 0), 100, 'the bar adds up to the whole')
+  assert.deepEqual(diskState({ usedBytes: 95, totalBytes: 100 }), { usedPercent: 95, nearlyFull: true })
+  const fine = { linux: true, memory: m, disks: [{ mount: '/', usedBytes: 40, totalBytes: 100, availableBytes: 60 }], cpu: { cores: 4, load: [1, 1, 1] } }
+  assert.deepEqual(serverConcerns(fine), [])
+  const bad = { linux: true, memory: Object.assign({}, m, { availableBytes: 0.5 * G, swapTotalBytes: 2 * G, swapUsedBytes: 1.5 * G }), disks: [{ mount: '/', usedBytes: 95, totalBytes: 100, availableBytes: 5 }], cpu: { cores: 2, load: [3, 3.5, 2] } }
+  assert.equal(serverConcerns(bad).length, 4, serverConcerns(bad).join(' | '))
+})

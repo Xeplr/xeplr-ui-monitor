@@ -15,3 +15,9 @@ export const SCREEN_RULES = [
   { selector: '#xeplr-monitor-log', label: 'The log (id="xeplr-monitor-log") for the selected service', when: (c) => Boolean(c.selected) },
   { selector: '#xeplr-monitor-audit', label: 'The audit list (id="xeplr-monitor-audit")', when: (c) => c.view === 'audit' && Boolean(c.audit) }
 ]
+
+// The Home page: the memory and the disks, once the numbers are in from Linux.
+export const SERVER_RULES = [
+  { selector: '#xeplr-monitor-memory', label: 'The memory (id="xeplr-monitor-memory")', when: (c) => Boolean(c.stats && c.stats.linux) },
+  { selector: '#xeplr-monitor-disks', label: 'The disks (id="xeplr-monitor-disks")', when: (c) => Boolean(c.stats && c.stats.linux) }
+]

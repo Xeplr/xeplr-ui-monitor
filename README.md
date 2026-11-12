@@ -1,6 +1,11 @@
 # @xeplr/ui-monitor
 
-The **Monitor page** of [`xeplr-monitor`](https://github.com/Xeplr/xeplr-monitor), a xeplr app: see a server's services and how each one is doing, start, stop, restart or kill them, and read their logs live or for a time range. It is one page of an app made by `@xeplr/cli`: **sign-in, the side rail and who may do what are the app's** (`@xeplr/ui-account`, `@xeplr/auth`), not this package's.
+Two pages of [`xeplr-monitor`](https://github.com/Xeplr/xeplr-monitor), a xeplr app:
+
+- **`MonitorPage`**: see a server's services and how each one is doing, start, stop, restart or kill them, and read their logs live or for a time range.
+- **`ServerPage`** (the app's Home): the machine itself — memory in GB (total, used, cache & buffers, free, available, swap, and one bar of how it divides up), CPU (in use now, cores, load), every disk (used, free, a bar each), uptime, OS and kernel, and what needs a look.
+
+They are pages of an app made by `@xeplr/cli`: It is one page of an app made by `@xeplr/cli`: **sign-in, the side rail and who may do what are the app's** (`@xeplr/ui-account`, `@xeplr/auth`), not this package's.
 
 It is built on the shared xeplr UI packages rather than its own copies of them:
 
@@ -23,10 +28,10 @@ Built the xeplr way, so the logic and the look can be swapped separately:
 
 | Layer | Files | |
 |---|---|---|
-| Model | `monitorApi.js`, `monitorFormat.js` | Requests, and the pure rules: states in words, sizes, CPU %, memory against its limit, what needs a look, times, what a log filter keeps. No React. |
-| Controllers | `useMonitorSettings`, `useMonitorServices`, `useServiceLogs` | State and handlers. No JSX. |
-| Designs | `designs/MonitorScreen.jsx`, `monitor.css` | Presentation only; everything comes in as props. |
-| Pages | `pages.jsx`: `MonitorPage` | Controllers and design wired together, with the design check. |
+| Model | `monitorApi.js`, `monitorFormat.js`, `serverFormat.js` | Requests, and the pure rules: states in words, sizes, CPU %, memory against its limit, what needs a look, times, what a log filter keeps; the server's numbers in GB, shares, uptime, how memory divides. No React. |
+| Controllers | `useMonitorSettings`, `useMonitorServices`, `useServiceLogs`, `useServerStats` | State and handlers. No JSX. |
+| Designs | `designs/MonitorScreen.jsx`, `designs/ServerScreen.jsx`, `monitor.css` | Presentation only; everything comes in as props. |
+| Pages | `pages.jsx`: `MonitorPage`, `ServerPage` | Controllers and design wired together, with the design check. |
 
 ## Install
 
@@ -71,9 +76,14 @@ After each render, the page checks its design for the elements it requires. If o
 - for the selected service: a `[data-xeplr-action="restart"]` button and `#xeplr-monitor-log`
 - `#xeplr-monitor-audit` on the audit view
 
+**Server (`SERVER_RULES`)**, once the numbers are in from Linux:
+- `#xeplr-monitor-memory` and `#xeplr-monitor-disks`
+
 ## What the controllers give a design
 
-**`useMonitorSettings({ api })`:** `allowed` (the patterns of services that may be added, `MONITOR_ALLOW`), `self` (the monitor API's own unit, which it will not stop or kill), `loading`, `error`.
+**`useMonitorSettings({ api })`:** `self` (the monitor API's own unit, which it will not stop or kill), `loading`, `error`. Any service can be added; the app's roles decide who may.
+
+**`useServerStats({ api })`:** `stats` (`GET /host`: `linux`, `host { name, os, kernel, arch, uptimeSeconds }`, `memory { totalBytes, usedBytes, freeBytes, availableBytes, buffersBytes, cacheBytes, sharedBytes, swapTotalBytes, swapUsedBytes }` counted the way `free` counts it, `cpu { cores, model, load, usePercent }`, `disks [{ device, mount, type, totalBytes, usedBytes, availableBytes }]`), `loading`, `error`, `reload()`. Asked again every 5 seconds while the tab is visible.
 
 **`useMonitorServices({ api, self })`:**
 - **The list:** `list`, `loading`, `loadError`. It is asked again every 5 seconds while the tab is visible.
@@ -100,6 +110,16 @@ Each service in the list comes with its `status` and its `processes` (see xeplr-
 - **Processes:** every process of the service, the main one first, then by memory: PID, command, memory (and swap), CPU, threads, state in words, running for. A stuck or zombie process is red.
 
 `percent`, `memoryText`, `processState` and `concerns` are exported for a design of your own.
+
+## The server itself (`ServerPage`)
+
+- **Memory, in GB:** total; used (what programs hold); cache & buffers (the kernel's, given back when a program needs it); free (not in use at all); **available** (what a new program could have without swapping — the number that says whether the server is short of memory); swap. One bar shows how it divides up: used (blue), cache & buffers (orange), free (the empty track), with a legend giving each in GB and percent.
+- **CPU:** in use now (from two readings), cores and model, load over 1, 5 and 15 minutes (more than the cores means work is waiting).
+- **Disks:** each real filesystem once, with a bar, `X GB of Y GB used (N%) · Z GB free`. At 90% or more it says **Nearly full**, in words and in the warning colour.
+- **Needs a look** (`serverConcerns`): less than 10% of memory available, half the swap in use, a disk 90% full, the 5-minute load over the cores.
+- Not on Linux, the page says so instead of showing empty numbers.
+
+The two bar colours are categorical slots 1 and 2 (blue, orange), checked for colour-blind and normal-vision separation on both the dark and the light surface (`--xm-series-1`, `--xm-series-2`, `--xm-track`); every value is also written next to its bar.
 
 ## What is open lives in the URL
 

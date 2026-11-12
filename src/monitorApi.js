@@ -20,6 +20,7 @@ export function createMonitorApi({ fetch: call, stream, base = '/api/monitor' } 
 
   return {
     settings: () => json('GET', '/settings'),
+    host: () => json('GET', '/host'),
     services: () => json('GET', '/services'),
     addService: ({ unit: u, label }) => json('POST', '/services', { unit: u, label }),
     editService: (u, patch) => json('PATCH', unit(u), patch),

@@ -4,6 +4,7 @@
   --xm-bg: #0f1115; --xm-panel: #171a21; --xm-raised: #1e222b; --xm-line: #2a2f3a;
   --xm-text: #e6e8ec; --xm-muted: #9aa2b1; --xm-accent: #4f8cff; --xm-accent-text: #fff;
   --xm-good: #3fb950; --xm-bad: #f85149; --xm-busy: #d29922; --xm-off: #6e7681;
+  --xm-series-1: #3987e5; --xm-series-2: #d95926; --xm-track: #2a2f3a;
   --xm-log: #0b0d11; --xm-warn-text: #e3b341; --xm-err-text: #ff7b72;
   /* The shared pieces (@xeplr/ui-utils TextField, @xeplr/ui-table) read
      --xeplr-* tokens: set here from the monitor's own, so they match it in
@@ -27,6 +28,7 @@
   --xm-bg: #f6f7f9; --xm-panel: #fff; --xm-raised: #f0f2f5; --xm-line: #dde1e7;
   --xm-text: #1b1f27; --xm-muted: #5d6675; --xm-accent: #2563eb;
   --xm-good: #1a7f37; --xm-bad: #cf222e; --xm-busy: #9a6700; --xm-off: #8c959f;
+  --xm-series-1: #2a78d6; --xm-series-2: #eb6834; --xm-track: #e4e7ec;
   --xm-log: #fbfcfd; --xm-warn-text: #9a6700; --xm-err-text: #cf222e;
 }
 .xeplr-monitor *, .xeplr-monitor *::before, .xeplr-monitor *::after { box-sizing: border-box; }
@@ -159,4 +161,36 @@
 @media (min-width: 761px) {
   .xeplr-monitor-level .xeplr-dropdown-trigger { min-height: 34px; padding-top: 4px; padding-bottom: 4px; }
   .xeplr-monitor-lines .xeplr-numberfield-input { padding-top: 7px; padding-bottom: 7px; }
+}
+
+/* the server itself (Home). Used memory and cache are categorical slots 1 and 2
+   (blue, orange: checked for colour-blind and normal separation on both
+   surfaces); free is the empty track. A full disk wears the warning colour and
+   says so in words. */
+.xeplr-monitor-server { display: flex; flex-direction: column; gap: 14px; }
+.xeplr-monitor-server-row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr); gap: 14px; }
+.xeplr-monitor-server .xeplr-monitor-healthy, .xeplr-monitor-server .xeplr-monitor-concerns { margin: 0; }
+.xeplr-monitor-tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 12px; margin-top: 12px; }
+.xeplr-monitor-tile { display: flex; flex-direction: column; gap: 2px; padding: 10px 12px; border: 1px solid var(--xm-line); border-radius: 8px; background: var(--xm-bg); min-width: 0; }
+.xeplr-monitor-tile-label { color: var(--xm-muted); font-size: 12px; }
+.xeplr-monitor-tile-value { font-size: 20px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.xeplr-monitor-tile-sub { color: var(--xm-muted); font-size: 12px; overflow-wrap: anywhere; }
+.xeplr-monitor-stack { display: flex; gap: 2px; height: 16px; margin-top: 16px; background: var(--xm-track); border-radius: 4px; overflow: hidden; }
+.xeplr-monitor-stack-part { display: block; min-width: 2px; }
+.xeplr-monitor-stack-part.is-used, .xeplr-monitor-swatch.is-used { background: var(--xm-series-1); }
+.xeplr-monitor-stack-part.is-cache, .xeplr-monitor-swatch.is-cache { background: var(--xm-series-2); }
+.xeplr-monitor-stack-part.is-free { background: transparent; }
+.xeplr-monitor-swatch.is-free { background: var(--xm-track); border: 1px solid var(--xm-line); }
+.xeplr-monitor-legend { list-style: none; display: flex; flex-wrap: wrap; gap: 6px 18px; margin: 10px 0 0; padding: 0; }
+.xeplr-monitor-legend li { display: flex; align-items: center; gap: 6px; }
+.xeplr-monitor-swatch { width: 10px; height: 10px; border-radius: 2px; display: inline-block; }
+.xeplr-monitor-disks { list-style: none; margin: 12px 0 0; padding: 0; display: flex; flex-direction: column; gap: 14px; }
+.xeplr-monitor-disks li { display: flex; flex-direction: column; gap: 6px; }
+.xeplr-monitor-disk-head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.xeplr-monitor-meter { height: 10px; background: var(--xm-track); border-radius: 4px; overflow: hidden; }
+.xeplr-monitor-meter-fill { display: block; height: 100%; background: var(--xm-series-1); border-radius: 0 4px 4px 0; }
+.xeplr-monitor-meter-fill.is-full { background: var(--xm-busy); }
+@media (max-width: 760px) {
+  .xeplr-monitor-server-row { grid-template-columns: minmax(0, 1fr); }
+  .xeplr-monitor-tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }

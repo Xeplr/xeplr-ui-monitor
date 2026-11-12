@@ -12,9 +12,11 @@
 import { useDesignCheck } from '@xeplr/ui-utils'
 import { useMonitorSettings } from './useMonitorSettings.js'
 import { useMonitorServices } from './useMonitorServices.js'
+import { useServerStats } from './useServerStats.js'
 import { useServiceLogs } from './useServiceLogs.js'
-import { SCREEN_RULES } from './validateDesign.js'
+import { SCREEN_RULES, SERVER_RULES } from './validateDesign.js'
 import { MonitorScreen } from './designs/MonitorScreen.jsx'
+import { ServerScreen } from './designs/ServerScreen.jsx'
 import './designs/monitor.css'
 
 /** What a design that is missing required elements shows instead of itself. */
@@ -37,4 +39,13 @@ export function MonitorPage({ api, design, title }) {
   const View = design || MonitorScreen
   if (check.missing.length) return <Broken page="MonitorPage" missing={check.missing} />
   return <div ref={check.ref}><View c={c} logs={logs} settings={settings} title={title} /></div>
+}
+
+/** The server itself (a Home page): memory in GB, CPU, disks, uptime. Props: api (createMonitorApi), design?, title? */
+export function ServerPage({ api, design, title }) {
+  const s = useServerStats({ api })
+  const check = useDesignCheck(SERVER_RULES, s)
+  const View = design || ServerScreen
+  if (check.missing.length) return <Broken page="ServerPage" missing={check.missing} />
+  return <div ref={check.ref}><View s={s} title={title} /></div>
 }
