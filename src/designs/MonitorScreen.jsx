@@ -1,7 +1,7 @@
 // THE MONITOR — presentation only. Everything arrives as props:
 //   c        useMonitorServices: the list, the selected one, actions, add/edit, audit
 //   logs     useServiceLogs: the selected service's log
-//   session  useMonitorSession: who is signed in, sign out, what may be added
+//   settings useMonitorSettings: what may be added (allowed)
 //
 // Left, the watched services with their state; right, the selected one: what
 // systemd says about it (memory, CPU, threads, what needs a look, what runs
@@ -20,7 +20,7 @@ import { XeplrTable } from '@xeplr/ui-table'
 import { stateOf, bytes, ago, clock, resultText, percent, memoryText, processState, concerns, LEVELS } from '../monitorFormat.js'
 import './monitor.css'
 
-export function MonitorScreen({ c, logs, session, title = 'Xeplr Monitor' }) {
+export function MonitorScreen({ c, logs, settings, title = 'Monitor' }) {
   return (
     <div className="xeplr-monitor">
       <header className="xeplr-monitor-top">
@@ -30,12 +30,10 @@ export function MonitorScreen({ c, logs, session, title = 'Xeplr Monitor' }) {
           <button type="button" role="tab" aria-selected={c.view === 'audit'} onClick={c.showAudit}>Audit log</button>
         </nav>
         <span className="xeplr-monitor-grow" />
-        <span className="xeplr-monitor-muted">{session.user ? session.user.email : ''}</span>
-        <button type="button" className="xeplr-monitor-link" onClick={session.signOut}>Sign out</button>
       </header>
       {c.view === 'audit' ? <AuditView c={c} /> : (
         <div className="xeplr-monitor-body">
-          <ServiceList c={c} session={session} />
+          <ServiceList c={c} settings={settings} />
           <main className="xeplr-monitor-main">
             {c.selected ? <ServiceDetail c={c} s={c.selected} logs={logs} /> : (
               <div className="xeplr-monitor-empty">
@@ -45,7 +43,7 @@ export function MonitorScreen({ c, logs, session, title = 'Xeplr Monitor' }) {
           </main>
         </div>
       )}
-      {c.adding ? <AddWindow c={c} session={session} /> : null}
+      {c.adding ? <AddWindow c={c} settings={settings} /> : null}
       {c.editing ? <EditWindow c={c} /> : null}
     </div>
   )
@@ -53,7 +51,7 @@ export function MonitorScreen({ c, logs, session, title = 'Xeplr Monitor' }) {
 
 function Dot({ tone }) { return <span className={'xeplr-monitor-dot is-' + tone} aria-hidden="true" /> }
 
-function ServiceList({ c, session }) {
+function ServiceList({ c, settings }) {
   return (
     <aside className="xeplr-monitor-side">
       <div className="xeplr-monitor-side-head">
@@ -76,7 +74,7 @@ function ServiceList({ c, session }) {
           )
         })}
       </ul>
-      {session.allowed.length ? <p className="xeplr-monitor-muted xeplr-monitor-small">This monitor may control: {session.allowed.join(', ')}</p> : null}
+      {settings.allowed.length ? <p className="xeplr-monitor-muted xeplr-monitor-small">This monitor may control: {settings.allowed.join(', ')}</p> : null}
     </aside>
   )
 }
@@ -291,14 +289,14 @@ function Window({ title, onClose, children }) {
   )
 }
 
-function AddWindow({ c, session }) {
+function AddWindow({ c, settings }) {
   const a = c.adding
   return (
     <Window title="Add a service" onClose={c.closeAdd}>
       <form onSubmit={c.saveAdd}>
         <div id="xeplr-monitor-add-unit"><TextFieldPage label="Its systemd name" value={a.unit} placeholder="e.g. xeplr-bi-api" maxLength={200} onChange={(v) => c.editAdd({ unit: v })} /></div>
         <div id="xeplr-monitor-add-label"><TextFieldPage label="A name for it here (optional)" value={a.label} placeholder="e.g. BI API (testbi)" maxLength={80} onChange={(v) => c.editAdd({ label: v })} /></div>
-        <p className="xeplr-monitor-muted xeplr-monitor-small">It must be a service on this server{session.allowed.length ? ', matching ' + session.allowed.join(', ') : ''}. Adding it starts nothing.</p>
+        <p className="xeplr-monitor-muted xeplr-monitor-small">It must be a service on this server{settings.allowed.length ? ', matching ' + settings.allowed.join(', ') : ''}. Adding it starts nothing.</p>
         {a.error ? <p className="xeplr-monitor-bad" role="alert">{a.error}</p> : null}
         <div className="xeplr-monitor-row">
           <span />

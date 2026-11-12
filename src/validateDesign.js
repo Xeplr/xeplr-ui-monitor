@@ -7,13 +7,6 @@
 // A rule with `when(controller)` is checked only while that holds: the log
 // panel is required once a service is selected, not before.
 
-export const LOGIN_RULES = [
-  { selector: '#xeplr-monitor-email input', label: 'Email input, inside id="xeplr-monitor-email"', when: (c) => !c.needsCode },
-  { selector: '#xeplr-monitor-password input[type="password"]', label: 'Password input, inside id="xeplr-monitor-password"', when: (c) => !c.needsCode },
-  { selector: '#xeplr-monitor-code input', label: 'Code input, inside id="xeplr-monitor-code", once the code is asked for', when: (c) => c.needsCode },
-  { selector: 'button[type="submit"]', label: 'Submit button (type="submit")' }
-]
-
 export const SCREEN_RULES = [
   { selector: '#xeplr-monitor-services', label: 'The services list (id="xeplr-monitor-services")', when: (c) => c.view === 'services' },
   { selector: '#xeplr-monitor-add', label: 'The "Add a service" button (id="xeplr-monitor-add")', when: (c) => c.view === 'services' },

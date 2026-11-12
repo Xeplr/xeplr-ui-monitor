@@ -6,7 +6,6 @@
 //
 //   api        createMonitorApi()
 //   unit       the service, or null
-//   onExpired  a request answered 401
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useUrlParams } from '@xeplr/ui-utils/src/url/useUrlState.js'
 import { resolveDateValue } from '@xeplr/ui-utils'
@@ -15,7 +14,7 @@ import { keeps, appended, spanTimes } from './monitorFormat.js'
 const KEEP = 5000          // lines held on screen; the oldest go
 const FIRST = 300          // lines shown when a log is opened
 
-export function useServiceLogs({ api, unit, onExpired }) {
+export function useServiceLogs({ api, unit }) {
   const url = useUrlParams()
   const [lines, setLines] = useState([])
   const [state, setState] = useState('idle')        // idle | loading | live | reconnecting | ready | error
@@ -31,10 +30,9 @@ export function useServiceLogs({ api, unit, onExpired }) {
   const setUrl = url.set
 
   const failed = useCallback((err) => {
-    if (err && err.status === 401 && onExpired) onExpired()
     setError(err.message)
     setState('error')
-  }, [onExpired])
+  }, [])
 
   // Live: the last lines, then every new one as it is written. Closing the
   // page, choosing another service or switching to history ends the follow,
