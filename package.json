@@ -1,6 +1,6 @@
 {
   "name": "@xeplr/ui-monitor",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "The page for @xeplr/monitor: sign in, see a server's services and how they are doing, start / stop / restart / kill them, read their logs live. Built on @xeplr/ui-utils and @xeplr/ui-table",
   "type": "module",
   "main": "src/index.js",
