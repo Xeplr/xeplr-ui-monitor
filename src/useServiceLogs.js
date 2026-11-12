@@ -1,38 +1,34 @@
 // ONE SERVICE'S LOG — the controller: live (followed as it is written) or
 // history (a time range), a search and a level that narrow what shows, pause
 // that holds the screen still while lines keep arriving underneath. No JSX.
-// The mode and the filter are in the URL (?tab=history&grep=…&level=warn).
+// The mode and the filter are in the URL (?tab=history&grep=…&level=warn),
+// through @xeplr/ui-utils' useUrlParams.
 //
 //   api        createMonitorApi()
 //   unit       the service, or null
 //   onExpired  a request answered 401
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { readUrl, writeUrl } from './monitorUrl.js'
-import { keeps, appended } from './monitorFormat.js'
+import { useUrlParams } from '@xeplr/ui-utils/src/url/useUrlState.js'
+import { resolveDateValue } from '@xeplr/ui-utils'
+import { keeps, appended, spanTimes } from './monitorFormat.js'
 
 const KEEP = 5000          // lines held on screen; the oldest go
 const FIRST = 300          // lines shown when a log is opened
 
 export function useServiceLogs({ api, unit, onExpired }) {
-  const [url, setUrl] = useState(readUrl)
+  const url = useUrlParams()
   const [lines, setLines] = useState([])
   const [state, setState] = useState('idle')        // idle | loading | live | reconnecting | ready | error
   const [error, setError] = useState(null)
   const [paused, setPaused] = useState(false)
   const [held, setHeld] = useState([])              // arrived while paused
-  const [range, setRange] = useState({ since: '', until: '', lines: '1000' })
+  const [range, setRange] = useState({ when: null, lines: 1000 })   // when: a DateRange selection
   const pausedRef = useRef(false)
 
-  useEffect(() => {
-    const on = () => setUrl(readUrl())
-    window.addEventListener('popstate', on)
-    window.addEventListener('xeplr-monitor-url', on)
-    return () => { window.removeEventListener('popstate', on); window.removeEventListener('xeplr-monitor-url', on) }
-  }, [])
-
-  const mode = url.tab === 'history' ? 'history' : 'live'
-  const grep = url.grep || ''
-  const level = url.level || ''
+  const mode = url.get('tab') === 'history' ? 'history' : 'live'
+  const grep = url.get('grep') || ''
+  const level = url.get('level') || ''
+  const setUrl = url.set
 
   const failed = useCallback((err) => {
     if (err && err.status === 401 && onExpired) onExpired()
@@ -69,10 +65,11 @@ export function useServiceLogs({ api, unit, onExpired }) {
     setState('loading')
     setError(null)
     try {
+      const times = spanTimes(resolveDateValue(range.when, new Date()))
       const out = await api.logs(unit, {
         lines: range.lines || 1000,
-        since: range.since ? new Date(range.since).toISOString() : undefined,
-        until: range.until ? new Date(range.until).toISOString() : undefined,
+        since: times.since,
+        until: times.until,
         grep: grep || undefined,
         level: level || undefined
       })
@@ -94,9 +91,10 @@ export function useServiceLogs({ api, unit, onExpired }) {
 
   return {
     unit, mode,
-    setMode: useCallback((m) => writeUrl({ tab: m === 'history' ? 'history' : null }, true), []),
-    grep, setGrep: useCallback((g) => writeUrl({ grep: g }), []),
-    level, setLevel: useCallback((v) => writeUrl({ level: v }), []),
+    // Switching the mode or typing a filter replaces the history entry: Back is not a keystroke undo.
+    setMode: useCallback((m) => setUrl({ tab: m === 'history' ? 'history' : null }, { replace: true }), [setUrl]),
+    grep, setGrep: useCallback((g) => setUrl({ grep: g }, { replace: true }), [setUrl]),
+    level, setLevel: useCallback((v) => setUrl({ level: v }, { replace: true }), [setUrl]),
     range, setRange: useCallback((patch) => setRange((r) => Object.assign({}, r, patch)), []),
     readHistory,
     lines: shown, total: lines.length, state, error,

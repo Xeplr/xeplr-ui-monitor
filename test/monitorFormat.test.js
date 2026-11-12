@@ -55,3 +55,29 @@ test('a query string of the values that are set', () => {
   assert.equal(query({ lines: 200, grep: 'a b', since: '', until: null }), '?lines=200&grep=a%20b')
   assert.equal(query({}), '')
 })
+
+test('how a service is doing: memory against its limit, CPU, and what needs a look', async () => {
+  const { percent, memoryText, concerns, processState } = await import('../src/monitorFormat.js')
+  assert.equal(percent(null), '—')
+  assert.equal(percent(3.14), '3.1%')
+  assert.equal(percent(142.6), '143%')
+  const MB = 1024 * 1024
+  assert.equal(memoryText({ memoryBytes: 300 * MB, memoryMaxBytes: 1024 * MB }), '300 MB of 1 GB (29%)')
+  assert.equal(memoryText({ memoryBytes: 300 * MB, memoryMaxBytes: null }), '300 MB')
+  const fine = { state: 'active', memoryBytes: 100 * MB, memoryMaxBytes: 1024 * MB, restarts: 0, swapBytes: 0, cpuPercent: 2 }
+  assert.deepEqual(concerns(fine, [{ state: 'S' }]), [])
+  const said = concerns({ state: 'active', memoryBytes: 950 * MB, memoryMaxBytes: 1024 * MB, restarts: 3, swapBytes: 0, cpuPercent: 99 }, [{ state: 'D' }, { state: 'Z' }])
+  assert.equal(said.length, 5, said.join(' | '))
+  assert.match(said[0], /93% of its limit/)
+  assert.deepEqual(concerns({ state: 'inactive', restarts: 4 }), [], 'a stopped service has nothing to watch')
+  assert.equal(processState('D'), 'stuck on disk or network')
+})
+
+test('a picked time span as the times the log is read between', async () => {
+  const { spanTimes } = await import('../src/monitorFormat.js')
+  const local = (text) => new Date(text).toISOString()
+  assert.deepEqual(spanTimes(null), { since: undefined, until: undefined })
+  assert.deepEqual(spanTimes({ from: '2026-11-12', to: '2026-11-12' }), { since: local('2026-11-12T00:00:00'), until: local('2026-11-12T23:59:59.999') }, 'a whole day')
+  assert.deepEqual(spanTimes({ from: '2026-11-12T09:30', to: '2026-11-12T10:00' }), { since: local('2026-11-12T09:30'), until: local('2026-11-12T10:00:59.999') }, 'to the end of the last minute')
+  assert.deepEqual(spanTimes({ from: '2026-11-12T09:30' }), { since: local('2026-11-12T09:30'), until: undefined }, 'open-ended')
+})

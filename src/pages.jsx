@@ -1,15 +1,19 @@
 // THE MONITOR, READY-MADE — each controller wired to its design, with the
-// design check (validateDesign.js) around it. A host can:
+// design check (validateDesign.js) around it. What is open lives in the URL
+// through @xeplr/ui-utils (react-router's search params): MonitorApp brings a
+// BrowserRouter when the host has none above it. A host can:
 //   1. use <MonitorApp /> as it is (what @xeplr/monitor serves)
 //   2. pass its own `design` to a page: the same controllers, its own look
 //   3. use the controllers with its own page, or monitorApi with no React
 import { useMemo } from 'react'
+import { BrowserRouter, useInRouterContext } from 'react-router-dom'
 import { createMonitorApi } from './monitorApi.js'
 import { useMonitorSession } from './useMonitorSession.js'
 import { useMonitorLogin } from './useMonitorLogin.js'
 import { useMonitorServices } from './useMonitorServices.js'
 import { useServiceLogs } from './useServiceLogs.js'
-import { useDesignCheck, LOGIN_RULES, SCREEN_RULES } from './validateDesign.js'
+import { useDesignCheck } from '@xeplr/ui-utils'
+import { LOGIN_RULES, SCREEN_RULES } from './validateDesign.js'
 import { MonitorLogin } from './designs/MonitorLogin.jsx'
 import { MonitorScreen } from './designs/MonitorScreen.jsx'
 import './designs/monitor.css'
@@ -45,7 +49,13 @@ export function MonitorPage({ api, session, design, title }) {
 }
 
 /** Sign-in, then the monitor. Props: base? ('api'), title?, loginDesign?, design? */
-export function MonitorApp({ base = 'api', title, loginDesign, design }) {
+export function MonitorApp(props) {
+  // Only the query is used, never the path, so the page works under whatever path nginx gives it.
+  if (!useInRouterContext()) return <BrowserRouter><MonitorApp {...props} /></BrowserRouter>
+  return <SignedInOrNot {...props} />
+}
+
+function SignedInOrNot({ base = 'api', title, loginDesign, design }) {
   const api = useMemo(() => createMonitorApi(base), [base])
   const session = useMonitorSession({ api })
   if (session.state === 'checking') return <div className="xeplr-monitor" />

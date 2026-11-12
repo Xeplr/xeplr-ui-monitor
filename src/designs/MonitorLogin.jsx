@@ -1,5 +1,7 @@
 // THE SIGN-IN PAGE — presentation only: everything arrives from
-// useMonitorLogin. Email and password, then the code when asked.
+// useMonitorLogin. Email and password, then the code when asked. The boxes
+// are @xeplr/ui-utils' TextFieldPage (the password one masked).
+import { TextFieldPage } from '@xeplr/ui-utils'
 import './monitor.css'
 
 export function MonitorLogin({ c, title = 'Xeplr Monitor' }) {
@@ -10,18 +12,12 @@ export function MonitorLogin({ c, title = 'Xeplr Monitor' }) {
         <p className="xeplr-monitor-muted">The servers' services: their state, their logs, and start, stop, restart.</p>
         {!c.needsCode ? (
           <>
-            <label className="xeplr-monitor-field" htmlFor="xeplr-monitor-email">Email
-              <input id="xeplr-monitor-email" type="email" autoComplete="username" value={c.email} onChange={(e) => c.setEmail(e.target.value)} autoFocus />
-            </label>
-            <label className="xeplr-monitor-field" htmlFor="xeplr-monitor-password">Password
-              <input id="xeplr-monitor-password" type="password" autoComplete="current-password" value={c.password} onChange={(e) => c.setPassword(e.target.value)} />
-            </label>
+            <div id="xeplr-monitor-email" className="xeplr-monitor-field"><TextFieldPage label="Email" value={c.email} onChange={c.setEmail} /></div>
+            <div id="xeplr-monitor-password" className="xeplr-monitor-field"><TextFieldPage type="password" label="Password" value={c.password} onChange={c.setPassword} /></div>
           </>
         ) : (
           <>
-            <label className="xeplr-monitor-field" htmlFor="xeplr-monitor-code">The six digits your authenticator app shows
-              <input id="xeplr-monitor-code" inputMode="numeric" autoComplete="one-time-code" maxLength={6} value={c.code} onChange={(e) => c.setCode(e.target.value.replace(/\D/g, ''))} autoFocus />
-            </label>
+            <div id="xeplr-monitor-code" className="xeplr-monitor-field"><TextFieldPage label="The six digits your authenticator app shows" maxLength={6} value={c.code} onChange={(v) => c.setCode(String(v).replace(/\D/g, ''))} /></div>
           </>
         )}
         {c.error ? <p className="xeplr-monitor-bad" role="alert">{c.error}</p> : null}

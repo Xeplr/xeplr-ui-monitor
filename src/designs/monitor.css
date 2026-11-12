@@ -5,6 +5,20 @@
   --xm-text: #e6e8ec; --xm-muted: #9aa2b1; --xm-accent: #4f8cff; --xm-accent-text: #fff;
   --xm-good: #3fb950; --xm-bad: #f85149; --xm-busy: #d29922; --xm-off: #6e7681;
   --xm-log: #0b0d11; --xm-warn-text: #e3b341; --xm-err-text: #ff7b72;
+  /* The shared pieces (@xeplr/ui-utils TextField, @xeplr/ui-table) read
+     --xeplr-* tokens: set here from the monitor's own, so they match it in
+     dark and light without a theme stylesheet from the host. */
+  --xeplr-text-primary: var(--xm-text); --xeplr-text-secondary: var(--xm-muted); --xeplr-text-muted: var(--xm-muted);
+  --xeplr-bg-secondary: var(--xm-panel); --xeplr-bg-tertiary: var(--xm-panel); --xeplr-bg-hover: var(--xm-raised); --xeplr-bg-active: var(--xm-raised);
+  --xeplr-border-primary: var(--xm-line); --xeplr-border-secondary: var(--xm-line);
+  --xeplr-accent: var(--xm-accent); --xeplr-accent-text: var(--xm-accent-text);
+  --xeplr-danger: var(--xm-bad); --xeplr-success: var(--xm-good); --xeplr-warning: var(--xm-busy);
+  --xeplr-input-bg: var(--xm-bg); --xeplr-input-border: var(--xm-line); --xeplr-input-text: var(--xm-text);
+  --xeplr-input-text-bg: var(--xm-bg); --xeplr-input-text-color: var(--xm-text); --xeplr-input-text-border-color: var(--xm-line);
+  --xeplr-input-text-border-hover: var(--xm-muted); --xeplr-input-text-border-focus: var(--xm-accent); --xeplr-input-text-ring-color: var(--xm-accent);
+  --xeplr-input-text-placeholder: var(--xm-muted); --xeplr-input-text-label-color: var(--xm-muted); --xeplr-input-text-help-color: var(--xm-muted);
+  --xeplr-input-text-invalid-color: var(--xm-bad); --xeplr-input-text-radius: 6px; --xeplr-input-text-font-size: 14px; --xeplr-input-text-padding: 6px 10px;
+  --xeplr-input-text-label-transform: none; --xeplr-input-text-label-size: 13px; --xeplr-input-text-label-weight: 400; --xeplr-input-text-label-spacing: 0;
   min-height: 100vh; background: var(--xm-bg); color: var(--xm-text);
   font: 14px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   box-sizing: border-box;
@@ -16,12 +30,15 @@
   --xm-log: #fbfcfd; --xm-warn-text: #9a6700; --xm-err-text: #cf222e;
 }
 .xeplr-monitor *, .xeplr-monitor *::before, .xeplr-monitor *::after { box-sizing: border-box; }
-.xeplr-monitor button, .xeplr-monitor input, .xeplr-monitor select { font: inherit; color: inherit; }
-.xeplr-monitor button { background: var(--xm-raised); border: 1px solid var(--xm-line); border-radius: 6px; padding: 6px 12px; cursor: pointer; white-space: nowrap; }
-.xeplr-monitor button:hover:not(:disabled) { border-color: var(--xm-muted); }
-.xeplr-monitor button:disabled { opacity: .45; cursor: default; }
-.xeplr-monitor input, .xeplr-monitor select { background: var(--xm-bg); border: 1px solid var(--xm-line); border-radius: 6px; padding: 6px 10px; min-width: 0; }
-.xeplr-monitor input:focus, .xeplr-monitor select:focus, .xeplr-monitor button:focus-visible { outline: 2px solid var(--xm-accent); outline-offset: 1px; }
+/* Plain elements' defaults at zero specificity (:where), so the shared
+   components' own classes (@xeplr/ui-table's filter button, @xeplr/ui-utils'
+   text box) always win over them. */
+:where(.xeplr-monitor) :where(button, input, select) { font: inherit; color: inherit; }
+:where(.xeplr-monitor) :where(button) { background: var(--xm-raised); border: 1px solid var(--xm-line); border-radius: 6px; padding: 6px 12px; cursor: pointer; white-space: nowrap; }
+:where(.xeplr-monitor) :where(button:hover:not(:disabled)) { border-color: var(--xm-muted); }
+:where(.xeplr-monitor) :where(button:disabled) { opacity: .45; cursor: default; }
+:where(.xeplr-monitor) :where(input, select) { background: var(--xm-bg); border: 1px solid var(--xm-line); border-radius: 6px; padding: 6px 10px; min-width: 0; }
+:where(.xeplr-monitor) :where(input:focus, select:focus, button:focus-visible) { outline: 2px solid var(--xm-accent); outline-offset: 1px; }
 .xeplr-monitor .xeplr-monitor-primary { background: var(--xm-accent); border-color: var(--xm-accent); color: var(--xm-accent-text); }
 .xeplr-monitor .is-danger { color: var(--xm-bad); }
 .xeplr-monitor .xeplr-monitor-primary.is-danger { background: var(--xm-bad); border-color: var(--xm-bad); color: #fff; }
@@ -39,10 +56,6 @@
 .xeplr-monitor-tabs { display: flex; gap: 2px; background: var(--xm-bg); border: 1px solid var(--xm-line); border-radius: 8px; padding: 2px; }
 .xeplr-monitor .xeplr-monitor-tabs button { border: 0; background: none; padding: 4px 12px; border-radius: 6px; }
 .xeplr-monitor .xeplr-monitor-tabs button[aria-selected="true"] { background: var(--xm-raised); color: var(--xm-text); font-weight: 600; }
-.xeplr-monitor-banner { display: flex; align-items: center; gap: 8px; padding: 8px 20px; border-bottom: 1px solid var(--xm-line); }
-.xeplr-monitor-banner.is-good { color: var(--xm-good); }
-.xeplr-monitor-banner.is-bad { color: var(--xm-bad); }
-.xeplr-monitor-banner span { flex: 1; }
 
 /* layout: full width */
 .xeplr-monitor-body { display: grid; grid-template-columns: minmax(240px, 300px) minmax(0, 1fr); min-height: calc(100vh - 53px); }
@@ -69,16 +82,30 @@
 .xeplr-monitor-head { display: flex; align-items: flex-start; gap: 12px; flex-wrap: wrap; }
 .xeplr-monitor-h1 { font-size: 18px; margin: 0 0 2px; display: flex; align-items: center; }
 .xeplr-monitor-actions { display: flex; gap: 6px; flex-wrap: wrap; }
-.xeplr-monitor-confirm { display: flex; align-items: center; gap: 8px; margin-top: 12px; padding: 10px 12px; border: 1px solid var(--xm-busy); border-radius: 8px; background: color-mix(in srgb, var(--xm-busy) 10%, transparent); flex-wrap: wrap; }
 .xeplr-monitor-facts { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 12px 18px; margin: 14px 0 0; }
 .xeplr-monitor-fact { min-width: 0; }
 .xeplr-monitor-facts dt { color: var(--xm-muted); font-size: 12px; }
 .xeplr-monitor-facts dd { margin: 0; overflow-wrap: anywhere; }
+.xeplr-monitor-item-warn { color: var(--xm-busy); font-size: 12.5px; padding-left: 16px; }
+.xeplr-monitor-healthy { margin: 12px 0 0; color: var(--xm-good); }
+.xeplr-monitor-concerns { margin: 12px 0 0; padding: 8px 12px 8px 28px; border: 1px solid var(--xm-busy); border-radius: 8px; background: color-mix(in srgb, var(--xm-busy) 10%, transparent); color: var(--xm-warn-text); }
+.xeplr-monitor-runs { display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; margin: 14px 0 0; padding-top: 12px; border-top: 1px solid var(--xm-line); }
+.xeplr-monitor-runs .xeplr-monitor-fact { display: grid; grid-template-columns: 90px minmax(0, 1fr); gap: 10px; }
+.xeplr-monitor-runs dt { color: var(--xm-muted); font-size: 12px; padding-top: 2px; }
+.xeplr-monitor-runs dd { margin: 0; overflow-wrap: anywhere; }
+.xeplr-monitor code { font: 12.5px/1.5 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+.xeplr-monitor-tablebox { margin-top: 10px; overflow-x: auto; }
+.xeplr-monitor-tablebox code { white-space: normal; overflow-wrap: anywhere; }
+/* On a phone the tables scroll sideways inside their box rather than squeeze a command to a letter a line. */
+#xeplr-monitor-processes table { min-width: 720px; }
+#xeplr-monitor-audit table { min-width: 640px; }
+.xeplr-monitor .xeplr-monitor-row-bad td { color: var(--xm-bad); }
 
 /* the log */
 .xeplr-monitor-logcard { display: flex; flex-direction: column; gap: 8px; flex: 1 1 auto; }
 .xeplr-monitor-logbar { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-.xeplr-monitor-logbar input[type="search"] { width: 220px; }
+.xeplr-monitor-search { width: 240px; }
+.xeplr-monitor-search .xeplr-textfield { margin-bottom: 0; }
 .xeplr-monitor-range { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 .xeplr-monitor-range label { display: flex; align-items: center; gap: 6px; color: var(--xm-muted); }
 .xeplr-monitor-range input[type="number"] { width: 80px; }
@@ -94,12 +121,6 @@
 .xeplr-monitor-pill.is-good { color: var(--xm-good); }
 .xeplr-monitor-pill.is-busy { color: var(--xm-busy); }
 .xeplr-monitor-pill.is-bad { color: var(--xm-bad); }
-
-/* the audit log */
-.xeplr-monitor-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-.xeplr-monitor-table th, .xeplr-monitor-table td { text-align: left; padding: 6px 10px; border-bottom: 1px solid var(--xm-line); vertical-align: top; }
-.xeplr-monitor-table th { color: var(--xm-muted); font-weight: 500; font-size: 12.5px; }
-.xeplr-monitor-table tr.is-bad td { color: var(--xm-bad); }
 
 /* windows */
 .xeplr-monitor-scrim { position: fixed; inset: 0; background: rgb(0 0 0 / .55); display: grid; place-items: center; z-index: 10; padding: 16px; }
@@ -123,6 +144,19 @@
   .xeplr-monitor-side { border-right: 0; border-bottom: 1px solid var(--xm-line); }
   .xeplr-monitor-top { padding: 10px 16px; gap: 10px; }
   .xeplr-monitor-main { padding: 14px 16px; }
-  .xeplr-monitor-logbar input[type="search"] { width: 100%; }
+  .xeplr-monitor-search { width: 100%; }
   .xeplr-monitor-facts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .xeplr-monitor-runs .xeplr-monitor-fact { grid-template-columns: minmax(0, 1fr); gap: 2px; }
+}
+
+/* the history's time and line count, and the level (shared pieces from @xeplr/ui-utils) */
+.xeplr-monitor-level { min-width: 190px; }
+.xeplr-monitor-when { position: relative; }
+.xeplr-monitor-when-panel { position: absolute; top: calc(100% + 6px); left: 0; z-index: 5; width: max-content; max-width: calc(100vw - 32px); background: var(--xm-panel); border: 1px solid var(--xm-line); border-radius: 10px; box-shadow: 0 8px 24px rgb(0 0 0 / .35); }
+.xeplr-monitor-lines { width: 90px; }
+/* the log bar's controls one height on a desktop (34px, as the tabs and the
+   search box); on a phone the libraries' larger touch sizes stay */
+@media (min-width: 761px) {
+  .xeplr-monitor-level .xeplr-dropdown-trigger { min-height: 34px; padding-top: 4px; padding-bottom: 4px; }
+  .xeplr-monitor-lines .xeplr-numberfield-input { padding-top: 7px; padding-bottom: 7px; }
 }

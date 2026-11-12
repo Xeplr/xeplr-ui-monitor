@@ -1,14 +1,17 @@
 // THE SERVICES — the controller: the watched list with each one's state
 // (asked again every few seconds), adding one, changing one in place,
 // start / stop / restart / kill with an "are you sure" for the ones that take
-// it down, and the audit log. No JSX. The selected service and the view are
-// in the URL (?service=…&view=…).
+// it down (@xeplr/ui-utils raiseConfirm), each result told by raiseSnackbar,
+// and the audit log. No JSX. The selected service and the view are in the URL
+// (?service=…&view=…) through @xeplr/ui-utils' useUrlParams, which needs a
+// router above it — MonitorApp brings one when the host has none.
 //
 //   api        createMonitorApi()
 //   self       the monitor's own unit, which it will not stop or kill
 //   onExpired  a request answered 401: the session ended
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { readUrl, writeUrl } from './monitorUrl.js'
+import { raiseConfirm, raiseSnackbar } from '@xeplr/ui-utils'
+import { useUrlParams } from '@xeplr/ui-utils/src/url/useUrlState.js'
 import { stateOf, needsConfirm, confirmText } from './monitorFormat.js'
 
 const POLL_MS = 5000
@@ -16,20 +19,11 @@ const POLL_MS = 5000
 export function useMonitorServices({ api, self, onExpired }) {
   const [list, setList] = useState(null)
   const [loadError, setLoadError] = useState(null)
-  const [url, setUrl] = useState(readUrl)
+  const url = useUrlParams()
   const [busy, setBusy] = useState({})                // unit -> action running
-  const [message, setMessage] = useState(null)        // { tone, text }
-  const [confirm, setConfirm] = useState(null)        // { unit, action, text }
   const [adding, setAdding] = useState(null)          // { unit, label, error, busy } while the add form is open
   const [editing, setEditing] = useState(null)        // { unit, label, newUnit, error, busy }
   const [audit, setAudit] = useState(null)
-
-  useEffect(() => {
-    const on = () => setUrl(readUrl())
-    window.addEventListener('popstate', on)
-    window.addEventListener('xeplr-monitor-url', on)
-    return () => { window.removeEventListener('popstate', on); window.removeEventListener('xeplr-monitor-url', on) }
-  }, [])
 
   const failed = useCallback((err) => {
     if (err && err.status === 401 && onExpired) onExpired()
@@ -43,44 +37,50 @@ export function useMonitorServices({ api, self, onExpired }) {
     return () => clearInterval(t)
   }, [load])
 
-  const view = url.view === 'audit' ? 'audit' : 'services'
-  const selectedUnit = url.service || null
+  const view = url.get('view') === 'audit' ? 'audit' : 'services'
+  const selectedUnit = url.get('service')
   const selected = useMemo(() => (list || []).find((s) => s.unit === selectedUnit) || null, [list, selectedUnit])
-  const select = useCallback((unit) => writeUrl({ service: unit, view: null, tab: null, grep: null, level: null }, true), [])
-  const showAudit = useCallback(() => writeUrl({ view: 'audit', service: null }, true), [])
-  const showServices = useCallback(() => writeUrl({ view: null }, true), [])
+  // Opening a service or a view adds a history entry, so Back returns to the last one.
+  const setUrl = url.set
+  const select = useCallback((unit) => setUrl({ service: unit, view: null, tab: null, grep: null, level: null }), [setUrl])
+  const showAudit = useCallback(() => setUrl({ view: 'audit', service: null, tab: null, grep: null, level: null }), [setUrl])
+  const showServices = useCallback(() => setUrl({ view: null }), [setUrl])
 
   useEffect(() => {
     if (view !== 'audit') return
-    api.audit(300).then(setAudit).catch((e) => { failed(e); setMessage({ tone: 'bad', text: e.message }) })
+    api.audit(300).then(setAudit).catch((e) => { failed(e); raiseSnackbar(e.message, { design: 'error', duration: 8000 }) })
   }, [view, api, failed])
 
   // ── actions ───────────────────────────────────────────────────────────
   const run = useCallback(async (unit, action) => {
-    setConfirm(null)
     setBusy((b) => Object.assign({}, b, { [unit]: action }))
-    setMessage(null)
     try {
       const out = await api.act(unit, action)
       setList((l) => (l || []).map((s) => (s.unit === unit ? Object.assign({}, s, { status: out.status }) : s)))
       const s = (list || []).find((x) => x.unit === unit)
-      setMessage({ tone: 'good', text: (s ? s.label : unit) + ': ' + action + ' done. Now ' + stateOf(out.status).text.toLowerCase() + '.' })
+      raiseSnackbar((s ? s.label : unit) + ': ' + action + ' done. Now ' + stateOf(out.status).text.toLowerCase() + '.', { design: 'success', duration: 5000 })
     } catch (err) {
       failed(err)
-      setMessage({ tone: 'bad', text: err.message })
+      // A refusal (sudo, a timeout) is read slowly: it stays longer.
+      raiseSnackbar(err.message, { design: 'error', duration: 12000 })
     } finally {
       setBusy((b) => { const n = Object.assign({}, b); delete n[unit]; return n })
       load()
     }
   }, [api, list, load, failed])
 
-  const ask = useCallback((unit, action) => {
+  // Stop, kill and restart ask first; start just runs.
+  const ask = useCallback(async (unit, action) => {
     const s = (list || []).find((x) => x.unit === unit)
-    if (needsConfirm(action)) setConfirm({ unit, action, text: confirmText(action, s ? s.label : unit) })
-    else run(unit, action)
+    if (needsConfirm(action)) {
+      const yes = await raiseConfirm(confirmText(action, s ? s.label : unit), {
+        confirmLabel: 'Yes, ' + action,
+        danger: action === 'kill' || action === 'stop'
+      })
+      if (!yes) return
+    }
+    run(unit, action)
   }, [list, run])
-  const confirmYes = useCallback(() => { if (confirm) run(confirm.unit, confirm.action) }, [confirm, run])
-  const confirmNo = useCallback(() => setConfirm(null), [])
 
   /** Which actions a service offers now, and why one is not offered. */
   const actionsFor = useCallback((s) => {
@@ -126,31 +126,30 @@ export function useMonitorServices({ api, self, onExpired }) {
       const s = await api.editService(editing.unit, { label: editing.label, unit: editing.newUnit })
       setEditing(null)
       await load()
-      if (s.unit !== editing.unit && selectedUnit === editing.unit) writeUrl({ service: s.unit })
+      if (s.unit !== editing.unit && selectedUnit === editing.unit) setUrl({ service: s.unit }, { replace: true })
     } catch (err) {
       failed(err)
       setEditing((x) => Object.assign({}, x, { busy: false, error: err.message }))
     }
-  }, [api, editing, load, selectedUnit, failed])
+  }, [api, editing, load, selectedUnit, failed, setUrl])
   const removeEditing = useCallback(async () => {
     if (!editing) return
     try {
       await api.removeService(editing.unit)
       setEditing(null)
-      if (selectedUnit === editing.unit) writeUrl({ service: null })
+      if (selectedUnit === editing.unit) setUrl({ service: null }, { replace: true })
       await load()
     } catch (err) {
       failed(err)
       setEditing((x) => Object.assign({}, x, { error: err.message }))
     }
-  }, [api, editing, load, selectedUnit, failed])
+  }, [api, editing, load, selectedUnit, failed, setUrl])
 
   return {
     list, loading: list === null, loadError, reload: load,
     view, showAudit, showServices, audit,
     selected, selectedUnit, select,
-    busy, message, clearMessage: useCallback(() => setMessage(null), []),
-    ask, confirm, confirmYes, confirmNo, actionsFor,
+    busy, ask, actionsFor,
     adding, openAdd, editAdd, closeAdd, saveAdd,
     editing, openEdit, editEdit, closeEdit, saveEdit, removeEditing
   }
