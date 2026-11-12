@@ -41,9 +41,13 @@ export function MonitorPage({ api, design, title }) {
   return <div ref={check.ref}><View c={c} logs={logs} settings={settings} title={title} /></div>
 }
 
-/** The server itself (a Home page): memory in GB, CPU, disks, uptime. Props: api (createMonitorApi), design?, title? */
-export function ServerPage({ api, design, title }) {
-  const s = useServerStats({ api })
+/**
+ * The server itself (a Home page): memory in GB, the services added to the
+ * monitor with what each uses, CPU, disks, uptime.
+ * Props: api (createMonitorApi), monitorPath? ('/monitor': where a service opens), design?, title?
+ */
+export function ServerPage({ api, monitorPath, design, title }) {
+  const s = useServerStats({ api, monitorPath })
   const check = useDesignCheck(SERVER_RULES, s)
   const View = design || ServerScreen
   if (check.missing.length) return <Broken page="ServerPage" missing={check.missing} />

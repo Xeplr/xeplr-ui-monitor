@@ -194,3 +194,8 @@
   .xeplr-monitor-server-row { grid-template-columns: minmax(0, 1fr); }
   .xeplr-monitor-tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
+
+/* the services on Home */
+.xeplr-monitor .xeplr-monitor-link.xeplr-monitor-svc { padding: 0; text-align: left; white-space: normal; color: var(--xm-text); }
+.xeplr-monitor .xeplr-monitor-link.xeplr-monitor-svc:hover b { color: var(--xm-accent); text-decoration: underline; }
+.xeplr-monitor-svc-state { display: inline-flex; align-items: center; white-space: nowrap; }

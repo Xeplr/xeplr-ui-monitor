@@ -3,7 +3,7 @@
 Two pages of [`xeplr-monitor`](https://github.com/Xeplr/xeplr-monitor), a xeplr app:
 
 - **`MonitorPage`**: see a server's services and how each one is doing, start, stop, restart or kill them, and read their logs live or for a time range.
-- **`ServerPage`** (the app's Home): the machine itself — memory in GB (total, used, cache & buffers, free, available, swap, and one bar of how it divides up), CPU (in use now, cores, load), every disk (used, free, a bar each), uptime, OS and kernel, and what needs a look.
+- **`ServerPage`** (the app's Home): the machine itself — memory in GB (total, used, cache & buffers, free, available, swap, and one bar of how it divides up), **the services added to the monitor and what each is using**, CPU (in use now, cores, load), every disk (used, free, a bar each), uptime, OS and kernel, and what needs a look.
 
 They are pages of an app made by `@xeplr/cli`: It is one page of an app made by `@xeplr/cli`: **sign-in, the side rail and who may do what are the app's** (`@xeplr/ui-account`, `@xeplr/auth`), not this package's.
 
@@ -83,7 +83,7 @@ After each render, the page checks its design for the elements it requires. If o
 
 **`useMonitorSettings({ api })`:** `self` (the monitor API's own unit, which it will not stop or kill), `loading`, `error`. Any service can be added; the app's roles decide who may.
 
-**`useServerStats({ api })`:** `stats` (`GET /host`: `linux`, `host { name, os, kernel, arch, uptimeSeconds }`, `memory { totalBytes, usedBytes, freeBytes, availableBytes, buffersBytes, cacheBytes, sharedBytes, swapTotalBytes, swapUsedBytes }` counted the way `free` counts it, `cpu { cores, model, load, usePercent }`, `disks [{ device, mount, type, totalBytes, usedBytes, availableBytes }]`), `loading`, `error`, `reload()`. Asked again every 5 seconds while the tab is visible.
+**`useServerStats({ api, monitorPath })`:** `services` (as `GET /services`), `servicesError`, `open(unit)` (to the Monitor page, with that service selected), `stats` (`GET /host`: `linux`, `host { name, os, kernel, arch, uptimeSeconds }`, `memory { totalBytes, usedBytes, freeBytes, availableBytes, buffersBytes, cacheBytes, sharedBytes, swapTotalBytes, swapUsedBytes }` counted the way `free` counts it, `cpu { cores, model, load, usePercent }`, `disks [{ device, mount, type, totalBytes, usedBytes, availableBytes }]`), `loading`, `error`, `reload()`. Asked again every 5 seconds while the tab is visible.
 
 **`useMonitorServices({ api, self })`:**
 - **The list:** `list`, `loading`, `loadError`. It is asked again every 5 seconds while the tab is visible.
@@ -114,6 +114,7 @@ Each service in the list comes with its `status` and its `processes` (see xeplr-
 ## The server itself (`ServerPage`)
 
 - **Memory, in GB:** total; used (what programs hold); cache & buffers (the kernel's, given back when a program needs it); free (not in use at all); **available** (what a new program could have without swapping — the number that says whether the server is short of memory); swap. One bar shows how it divides up: used (blue), cache & buffers (orange), free (the empty track), with a legend giving each in GB and percent.
+- **Services:** each one added to the monitor, with its state, **memory** (and its share of the server's), its limit and how much of it is used, the most it has used, CPU now, processes and threads, restarts, running for, and how many things need a look. Its name opens it on the Monitor page: `<ServerPage api={monitor} monitorPath="/monitor" />` (the default). Someone whose roles do not include the services list still sees the server, and the reason the list is missing.
 - **CPU:** in use now (from two readings), cores and model, load over 1, 5 and 15 minutes (more than the cores means work is waiting).
 - **Disks:** each real filesystem once, with a bar, `X GB of Y GB used (N%) · Z GB free`. At 90% or more it says **Nearly full**, in words and in the warning colour.
 - **Needs a look** (`serverConcerns`): less than 10% of memory available, half the swap in use, a disk 90% full, the 5-minute load over the cores.
