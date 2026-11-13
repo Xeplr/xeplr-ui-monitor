@@ -122,6 +122,22 @@ Each service in the list comes with its `status` and its `processes` (see xeplr-
 
 The two bar colours are categorical slots 1 and 2 (blue, orange), checked for colour-blind and normal-vision separation on both the dark and the light surface (`--xm-series-1`, `--xm-series-2`, `--xm-track`); every value is also written next to its bar.
 
+## Backup connections (`ConnectionsPage`)
+
+The logins the backup jobs use, at the app's `/api/monitor/connections`:
+
+```jsx
+<Route path="/connections" element={<ConnectionsPage api={monitor} />} />   // title? design?
+```
+
+- **A database server** (Postgres or MySQL): host, port (5432 / 3306 by kind), user and password. The server only — each backup job chooses which of its databases to back up.
+- **An Amazon S3 bucket:** bucket, region (ap-south-1 by default), folder (`backups` or inside it: the key's IAM policy writes only under `backups/`), access key ID and secret.
+- **Secrets go in and never come back.** The list shows "stored", and S3 the key's hint (`AKIA…WXYZ`). Editing one leaves the password or key blank: blank keeps the stored one, typing replaces it (an S3 key is both halves). The form's secrets are dropped from memory the moment it saves or closes, and never logged.
+- **Test** asks the server: a database connects and counts its databases; an S3 key can only write, so the first backup is its test. **Remove** asks first, and the server refuses one a job still uses.
+- Checked in the browser before sending (`validateDraft`): every field needed, a port 1–65535, an S3 bucket name (3–63 lowercase letters, digits, dots, hyphens), a region like `ap-south-1`. The server checks again.
+
+API: `connections()`, `addConnection({ name, kind, details, secret })`, `editConnection(id, body)`, `removeConnection(id)`, `testConnection(id)`. The controller is `useBackupConnections({ api })`; the words, the form and its checks are `connectionsFormat.js`.
+
 ## What is open lives in the URL
 
 `?service=xeplr-bi-api.service&tab=history&grep=timeout&level=warn`, or `?view=audit`, read and written with `@xeplr/ui-utils`' `useUrlParams`. A refresh, or a link sent to someone, opens the same service, log mode and filter. Opening a service or the audit log adds a history entry, so Back returns. Switching live and history, or typing a search, replaces it, so Back is not a keystroke undo.
