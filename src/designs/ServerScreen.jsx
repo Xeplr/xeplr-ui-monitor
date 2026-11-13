@@ -3,12 +3,13 @@
 //   s   useServerStats: { stats, services, loading, error, servicesError, open }
 //
 // Memory first (in GB: total, used, cache & buffers, free, available, swap,
-// and one bar of how it divides up), then the services added to the monitor
+// one bar of how it divides up, and what the cache holds — by kind and by
+// service), then the services added to the monitor
 // with what each is using, then the CPU, the disks (one bar each) and how long
 // the server has been up. Values sit next to their bars; colour
 // is never the only way to read one.
 import { XeplrTable } from '@xeplr/ui-table'
-import { gb, share, uptimeText, memoryParts, diskState, serverConcerns } from '../serverFormat.js'
+import { gb, share, uptimeText, memoryParts, cacheBreakdown, diskState, serverConcerns } from '../serverFormat.js'
 import { stateOf, bytes, percent, ago, concerns } from '../monitorFormat.js'
 import './monitor.css'
 
@@ -80,7 +81,41 @@ function Memory({ m }) {
           <li key={p.key}><span className={'xeplr-monitor-swatch is-' + p.key} aria-hidden="true" />{p.label} <b>{gb(p.bytes)}</b> <span className="xeplr-monitor-muted">{p.percent}%</span></li>
         ))}
       </ul>
+      <CacheHolds c={cacheBreakdown(m)} />
     </section>
+  )
+}
+
+/** What the cache & buffers hold: by kind, and by whom — each a bar of its share. */
+function CacheHolds({ c }) {
+  if (!c.kinds.length && !c.groups.length) return null
+  return (
+    <div className="xeplr-monitor-cache" id="xeplr-monitor-cache">
+      <div>
+        <b>What the cache holds</b> <span className="xeplr-monitor-muted">· {gb(c.wholeBytes)}, given back as soon as a program needs it</span>
+        <ShareRows rows={c.kinds} sub={(k) => k.note} />
+      </div>
+      {c.groups.length ? (
+        <div>
+          <b>For whom</b> <span className="xeplr-monitor-muted">· whose files they are: each page counts for the service that first read it</span>
+          <ShareRows rows={c.groups} sub={(g) => g.unit} />
+        </div>
+      ) : null}
+    </div>
+  )
+}
+
+function ShareRows({ rows, sub }) {
+  return (
+    <ul className="xeplr-monitor-shares">
+      {rows.map((r) => (
+        <li key={r.key}>
+          <span className="xeplr-monitor-share-name"><b>{r.label}</b> <span className="xeplr-monitor-muted">{sub(r)}</span></span>
+          <span className="xeplr-monitor-share-bar" aria-hidden="true"><span style={{ width: (r.percent || 0) + '%' }} /></span>
+          <span className="xeplr-monitor-share-num"><b>{gb(r.bytes)}</b> <span className="xeplr-monitor-muted">{r.percent === null ? '' : r.percent + '%'}</span></span>
+        </li>
+      ))}
+    </ul>
   )
 }
 
