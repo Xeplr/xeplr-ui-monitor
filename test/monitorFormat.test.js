@@ -102,3 +102,18 @@ test('the server itself: GB, shares, uptime, how memory divides, what needs a lo
   const bad = { linux: true, memory: Object.assign({}, m, { availableBytes: 0.5 * G, swapTotalBytes: 2 * G, swapUsedBytes: 1.5 * G }), disks: [{ mount: '/', usedBytes: 95, totalBytes: 100, availableBytes: 5 }], cpu: { cores: 2, load: [3, 3.5, 2] } }
   assert.equal(serverConcerns(bad).length, 4, serverConcerns(bad).join(' | '))
 })
+
+test('what the cache holds: by kind and by whom, each a share of cache & buffers; the rest as Everything else', async () => {
+  const { cacheBreakdown } = await import('../src/serverFormat.js')
+  const c = cacheBreakdown({
+    cacheBytes: 900, buffersBytes: 100,
+    cacheKinds: [{ key: 'files', label: 'File contents', bytes: 800 }, { key: 'kernel', label: 'Kernel objects', bytes: 100 }, { key: 'buffers', label: 'Disk buffers', bytes: 100 }],
+    cacheBy: { groups: [{ name: 'postgresql.service', bytes: 600 }, { name: 'user.slice', bytes: 150 }], othersBytes: 250 }
+  })
+  assert.equal(c.wholeBytes, 1000)
+  assert.deepEqual(c.kinds.map((k) => [k.key, k.percent]), [['files', 80], ['kernel', 10], ['buffers', 10]])
+  assert.match(c.kinds[0].note, /databases, logs/)
+  assert.deepEqual(c.groups.map((g) => [g.label, g.unit, g.percent]), [['postgresql', 'postgresql.service', 60], ['People signed in', 'user.slice', 15], ['Everything else', 'the kernel itself, programs since stopped', 25]])
+  assert.deepEqual(cacheBreakdown({ cacheBytes: 1, buffersBytes: 0 }), { wholeBytes: 1, kinds: [], groups: [] }, 'an older API: nothing to break down')
+  assert.deepEqual(cacheBreakdown(null).kinds, [])
+})

@@ -47,6 +47,35 @@ export function memoryParts(memory) {
   })
 }
 
+// What each kind of cache is, in a line.
+const CACHE_KIND_NOTES = {
+  files: 'files read or written lately — databases, logs, programs — kept in memory to be read again fast',
+  kernel: 'the kernel\'s own records, mostly of folders and files it has looked up',
+  buffers: 'the disk\'s own bookkeeping, read raw'
+}
+
+/**
+ * WHAT THE CACHE & BUFFERS HOLD — by kind (file contents, kernel objects,
+ * disk buffers) and by whom (each service, people signed in, the rest), each
+ * with its share of the cache. Empty lists when the server did not say.
+ */
+export function cacheBreakdown(memory) {
+  const whole = memory ? (memory.cacheBytes || 0) + (memory.buffersBytes || 0) : 0
+  const withShare = (x) => Object.assign({}, x, { percent: share(x.bytes, whole) })
+  const kinds = (memory && memory.cacheKinds || []).map((k) => withShare(Object.assign({ note: CACHE_KIND_NOTES[k.key] || '' }, k)))
+  const by = memory && memory.cacheBy
+  const groups = by ? by.groups.map((g) => withShare({ key: g.name, label: groupLabel(g.name), unit: g.name, bytes: g.bytes })) : []
+  if (by && by.othersBytes > 0) groups.push(withShare({ key: 'others', label: 'Everything else', unit: 'the kernel itself, programs since stopped', bytes: by.othersBytes }))
+  return { wholeBytes: whole, kinds, groups }
+}
+
+/** A group's name as people say it: "postgresql.service" → "postgresql"; user.slice → people signed in. */
+function groupLabel(name) {
+  if (name === 'user.slice') return 'People signed in'
+  if (name === 'init.scope') return 'systemd'
+  return name.replace(/\.(service|scope|slice)$/, '')
+}
+
 /** A disk's state: how full, and whether it needs a look (90% or more). */
 export function diskState(disk) {
   const used = share(disk.usedBytes, disk.totalBytes)
