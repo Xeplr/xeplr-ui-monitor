@@ -14,9 +14,11 @@ import { useMonitorSettings } from './useMonitorSettings.js'
 import { useMonitorServices } from './useMonitorServices.js'
 import { useServerStats } from './useServerStats.js'
 import { useServiceLogs } from './useServiceLogs.js'
-import { SCREEN_RULES, SERVER_RULES } from './validateDesign.js'
+import { useBackupConnections } from './useBackupConnections.js'
+import { SCREEN_RULES, SERVER_RULES, CONNECTION_RULES } from './validateDesign.js'
 import { MonitorScreen } from './designs/MonitorScreen.jsx'
 import { ServerScreen } from './designs/ServerScreen.jsx'
+import { ConnectionsScreen } from './designs/ConnectionsScreen.jsx'
 import './designs/monitor.css'
 
 /** What a design that is missing required elements shows instead of itself. */
@@ -52,4 +54,18 @@ export function ServerPage({ api, monitorPath, design, title }) {
   const View = design || ServerScreen
   if (check.missing.length) return <Broken page="ServerPage" missing={check.missing} />
   return <div ref={check.ref}><View s={s} title={title} /></div>
+}
+
+/**
+ * The logins the backup jobs use: database servers (Postgres, MySQL) and the
+ * S3 bucket the dumps go to. Add, edit, test, remove; secrets stored
+ * encrypted by the API and never shown again.
+ * Props: api (createMonitorApi), design?, title? ('Backup connections')
+ */
+export function ConnectionsPage({ api, design, title }) {
+  const b = useBackupConnections({ api })
+  const check = useDesignCheck(CONNECTION_RULES, b)
+  const View = design || ConnectionsScreen
+  if (check.missing.length) return <Broken page="ConnectionsPage" missing={check.missing} />
+  return <div ref={check.ref}><View b={b} title={title} /></div>
 }

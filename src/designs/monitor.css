@@ -130,6 +130,12 @@
 .xeplr-monitor-window h2 { margin: 0 0 12px; font-size: 17px; }
 .xeplr-monitor-field { display: flex; flex-direction: column; gap: 4px; margin-bottom: 12px; color: var(--xm-muted); font-size: 13px; }
 .xeplr-monitor-field input { color: var(--xm-text); font-size: 14px; }
+.xeplr-monitor-field select { color: var(--xm-text); font-size: 14px; }
+.xeplr-monitor-field .xeplr-monitor-bad { margin: 0; }
+.xeplr-monitor-field input[aria-invalid="true"] { border-color: var(--xm-bad); }
+.xeplr-monitor-field-pair { display: grid; grid-template-columns: minmax(0, 1fr) 120px; gap: 0 12px; }
+@media (max-width: 480px) { .xeplr-monitor-field-pair { grid-template-columns: minmax(0, 1fr); } }
+.xeplr-monitor-window { max-height: calc(100vh - 32px); overflow-y: auto; }
 
 /* sign-in */
 .xeplr-monitor-login { display: grid; place-items: center; padding: 16px; }

@@ -29,6 +29,13 @@ export function createMonitorApi({ fetch: call, stream, base = '/api/monitor' } 
     logs: (u, q = {}) => json('GET', unit(u) + '/logs' + query(q)).then((r) => r.lines),
     audit: (limit) => json('GET', '/audit' + query({ limit })).then((r) => r.entries),
 
+    // The logins the backup jobs use. Secrets go in, never come back.
+    connections: () => json('GET', '/connections').then((r) => r.dataArray || []),
+    addConnection: (body) => json('POST', '/connections', body).then((r) => r.connection),
+    editConnection: (id, body) => json('PATCH', '/connections/' + encodeURIComponent(id), body).then((r) => r.connection),
+    removeConnection: (id) => json('DELETE', '/connections/' + encodeURIComponent(id)),
+    testConnection: (id) => json('POST', '/connections/' + encodeURIComponent(id) + '/test', {}),
+
     /**
      * Follow a service's log as it is written. → stop(). After a drop it
      * opens again by itself (onProblem(null) meanwhile); a refusal (4xx) or

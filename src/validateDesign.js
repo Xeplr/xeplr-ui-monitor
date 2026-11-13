@@ -21,3 +21,10 @@ export const SERVER_RULES = [
   { selector: '#xeplr-monitor-memory', label: 'The memory (id="xeplr-monitor-memory")', when: (c) => Boolean(c.stats && c.stats.linux) },
   { selector: '#xeplr-monitor-disks', label: 'The disks (id="xeplr-monitor-disks")', when: (c) => Boolean(c.stats && c.stats.linux) }
 ]
+
+// The backup connections: the list (once read), the Add button, and the form while it is open.
+export const CONNECTION_RULES = [
+  { selector: '#xeplr-monitor-connection-add', label: 'The "Add a connection" button (id="xeplr-monitor-connection-add")' },
+  { selector: '#xeplr-monitor-connections', label: 'The connections list (id="xeplr-monitor-connections")', when: (c) => Boolean(c.list) },
+  { selector: '#xeplr-monitor-connection-form input[type="password"]', label: 'A password-type input for the secrets, inside id="xeplr-monitor-connection-form"', when: (c) => Boolean(c.draft) }
+]
